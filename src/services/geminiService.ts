@@ -28,11 +28,28 @@ export async function searchPlaces(
       The user is looking for: ${query}. 
       If the user's location is provided, find places near them. If not, suggest popular and safe areas in Bangalore for newcomers.
       Provide a list of specific places with a brief description, why it's good for a newcomer, and estimated cost if possible.
-      Keep the tone welcoming and informative.`,
+      
+      IMPORTANT: In addition to the requested places, you MUST also suggest 2-3 popular tourist attractions or points of interest near the recommended locations.
+      Keep the tone welcoming and informative.
+      
+      CRITICAL: At the very end of your response, you MUST include a JSON block enclosed in \`\`\`json and \`\`\` containing an array of ALL the specific places you recommended (both the primary places and the nearby attractions). Include their approximate latitude and longitude in Bangalore.
+      Format:
+      \`\`\`json
+      [
+        {
+          "name": "Name of place",
+          "lat": 12.9716,
+          "lng": 77.5946,
+          "type": "pg" | "hotel" | "restaurant" | "attraction" | "other",
+          "description": "Short description"
+        }
+      ]
+      \`\`\`
+      `,
       config,
     });
 
-    const text = response.text;
+    let text = response.text || "";
     const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
 
     let places = [];
@@ -56,7 +73,20 @@ export async function searchPlaces(
         .filter(Boolean);
     }
 
-    return { text, places };
+    let mapPlaces = [];
+    const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
+    if (jsonMatch && jsonMatch[1]) {
+      try {
+        mapPlaces = JSON.parse(jsonMatch[1]);
+      } catch (e) {
+        console.error("Failed to parse map places JSON", e);
+      }
+    }
+
+    // Clean up text to remove the JSON block so it doesn't show in the UI
+    text = text.replace(/```json\s*[\s\S]*?\s*```/, '').trim();
+
+    return { text, places, mapPlaces };
   } catch (error) {
     console.error("Error fetching places:", error);
     throw new Error("Failed to fetch recommendations. Please try again.");
