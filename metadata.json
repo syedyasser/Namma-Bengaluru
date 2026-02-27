@@ -1,0 +1,5 @@
+{
+  "name": "Bangalore Newcomer Guide",
+  "description": "A guide for people visiting Bangalore for the first time, helping them find cheap PG accommodations, hotels, and restaurants around them.",
+  "requestFramePermissions": ["geolocation"]
+}
